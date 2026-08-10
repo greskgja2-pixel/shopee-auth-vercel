@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { buildAuthUrl, getConfig } from '@/lib/shopee'
+import { buildAuthUrl, getConfig } from '../../../../lib/shopee'
 
 export const dynamic = 'force-dynamic'
 
