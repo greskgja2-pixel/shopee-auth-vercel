@@ -1,5 +1,6 @@
+import { createHash } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
-import { SignJWT } from 'jose'
+import { EncryptJWT } from 'jose'
 import { exchangeCode, getConfig } from '../../../../lib/shopee'
 
 export const dynamic = 'force-dynamic'
@@ -7,7 +8,7 @@ export const dynamic = 'force-dynamic'
 function secretKey() {
   const secret = process.env.SESSION_SECRET
   if (!secret) throw new Error('missing_session_secret')
-  return new TextEncoder().encode(secret)
+  return createHash('sha256').update(secret).digest()
 }
 
 export async function GET(request: NextRequest) {
@@ -27,11 +28,16 @@ export async function GET(request: NextRequest) {
     const token = await exchangeCode(config, code, shopId)
     const expiresAt = Date.now() + token.expiresIn * 1000
 
-    const session = await new SignJWT({ shopId, accessToken: token.accessToken, refreshToken: token.refreshToken, expiresAt })
-      .setProtectedHeader({ alg: 'HS256' })
+    const session = await new EncryptJWT({
+      shopId,
+      accessToken: token.accessToken,
+      refreshToken: token.refreshToken,
+      expiresAt
+    })
+      .setProtectedHeader({ alg: 'dir', enc: 'A256GCM' })
       .setIssuedAt()
       .setExpirationTime('7d')
-      .sign(secretKey())
+      .encrypt(secretKey())
 
     const response = NextResponse.redirect(new URL('/dashboard', request.url))
     response.cookies.set('shopee_session', session, {
