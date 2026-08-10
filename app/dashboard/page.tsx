@@ -1,11 +1,12 @@
+import { createHash } from 'node:crypto'
 import { cookies } from 'next/headers'
-import { jwtVerify } from 'jose'
+import { jwtDecrypt } from 'jose'
 import { redirect } from 'next/navigation'
 
 function key() {
   const secret = process.env.SESSION_SECRET
   if (!secret) throw new Error('missing_session_secret')
-  return new TextEncoder().encode(secret)
+  return createHash('sha256').update(secret).digest()
 }
 
 export default async function Dashboard() {
@@ -13,7 +14,7 @@ export default async function Dashboard() {
   if (!token) redirect('/')
 
   try {
-    const { payload } = await jwtVerify(token, key())
+    const { payload } = await jwtDecrypt(token, key())
     const shopId = String(payload.shopId || '—')
     const expiresAt = Number(payload.expiresAt || 0)
 
@@ -33,7 +34,7 @@ export default async function Dashboard() {
           <form method="post" action="/api/shopee/logout" style={{ marginTop: 22 }}>
             <button className="btn secondary" type="submit">Desconectar</button>
           </form>
-          <div className="footer">Tokens protegidos em sessão HTTP-only</div>
+          <div className="footer">Tokens criptografados em sessão HTTP-only</div>
         </section>
       </main>
     )
