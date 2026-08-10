@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { SignJWT } from 'jose'
-import { exchangeCode, getConfig } from '@/lib/shopee'
+import { exchangeCode, getConfig } from '../../../../lib/shopee'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,12 +27,7 @@ export async function GET(request: NextRequest) {
     const token = await exchangeCode(config, code, shopId)
     const expiresAt = Date.now() + token.expiresIn * 1000
 
-    const session = await new SignJWT({
-      shopId,
-      accessToken: token.accessToken,
-      refreshToken: token.refreshToken,
-      expiresAt
-    })
+    const session = await new SignJWT({ shopId, accessToken: token.accessToken, refreshToken: token.refreshToken, expiresAt })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
       .setExpirationTime('7d')
