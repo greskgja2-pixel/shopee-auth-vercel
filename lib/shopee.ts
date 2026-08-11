@@ -1,4 +1,5 @@
 import crypto from 'node:crypto'
+import type { ShopeeSession } from './session'
 
 export type ShopeeConfig = {
   partnerId: string
@@ -45,11 +46,7 @@ export async function exchangeCode(config: ShopeeConfig, code: string, shopId: n
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     cache: 'no-store',
-    body: JSON.stringify({
-      code,
-      shop_id: shopId,
-      partner_id: Number(config.partnerId)
-    })
+    body: JSON.stringify({ code, shop_id: shopId, partner_id: Number(config.partnerId) })
   })
 
   const data = await response.json()
@@ -63,4 +60,86 @@ export async function exchangeCode(config: ShopeeConfig, code: string, shopId: n
     refreshToken: String(data.refresh_token || ''),
     expiresIn: Number(data.expire_in || 14400)
   }
+}
+
+type ShopeeRequestOptions = {
+  method?: 'GET' | 'POST'
+  query?: Record<string, string | number | boolean | undefined>
+  body?: unknown
+}
+
+export async function shopeeRequest<T = any>(
+  session: ShopeeSession,
+  path: string,
+  options: ShopeeRequestOptions = {}
+): Promise<T> {
+  const config = getConfig()
+  const timestamp = Math.floor(Date.now() / 1000)
+  const base = `${config.partnerId}${path}${timestamp}${session.accessToken}${session.shopId}`
+  const sign = hmac(config.partnerKey, base)
+  const url = new URL(path, config.host)
+
+  url.searchParams.set('partner_id', config.partnerId)
+  url.searchParams.set('timestamp', String(timestamp))
+  url.searchParams.set('access_token', session.accessToken)
+  url.searchParams.set('shop_id', String(session.shopId))
+  url.searchParams.set('sign', sign)
+
+  for (const [key, value] of Object.entries(options.query || {})) {
+    if (value !== undefined) url.searchParams.set(key, String(value))
+  }
+
+  const response = await fetch(url, {
+    method: options.method || 'GET',
+    cache: 'no-store',
+    headers: options.method === 'POST' ? { 'content-type': 'application/json' } : undefined,
+    body: options.method === 'POST' ? JSON.stringify(options.body ?? {}) : undefined
+  })
+
+  const data = await response.json()
+  if (!response.ok || data?.error) {
+    console.error('Shopee API error', path, data)
+    const message = data?.message || data?.error || `http_${response.status}`
+    throw new Error(String(message))
+  }
+  return data as T
+}
+
+export function getItemList(session: ShopeeSession, offset = 0, pageSize = 50, status = 'NORMAL') {
+  return shopeeRequest(session, '/api/v2/product/get_item_list', {
+    query: { offset, page_size: pageSize, item_status: status }
+  })
+}
+
+export function getItemBaseInfo(session: ShopeeSession, itemIds: number[]) {
+  return shopeeRequest(session, '/api/v2/product/get_item_base_info', {
+    query: { item_id_list: itemIds.join(',') }
+  })
+}
+
+export function getModelList(session: ShopeeSession, itemId: number) {
+  return shopeeRequest(session, '/api/v2/product/get_model_list', { query: { item_id: itemId } })
+}
+
+export function getLogisticsChannels(session: ShopeeSession) {
+  return shopeeRequest(session, '/api/v2/logistics/get_channel_list')
+}
+
+export function updateItem(session: ShopeeSession, body: unknown) {
+  return shopeeRequest(session, '/api/v2/product/update_item', { method: 'POST', body })
+}
+
+export function updatePrice(session: ShopeeSession, body: unknown) {
+  return shopeeRequest(session, '/api/v2/product/update_price', { method: 'POST', body })
+}
+
+export function updateStock(session: ShopeeSession, body: unknown) {
+  return shopeeRequest(session, '/api/v2/product/update_stock', { method: 'POST', body })
+}
+
+export function unlistItem(session: ShopeeSession, itemId: number, unlist = true) {
+  return shopeeRequest(session, '/api/v2/product/unlist_item', {
+    method: 'POST',
+    body: { item_list: [{ item_id: itemId, unlist }] }
+  })
 }
