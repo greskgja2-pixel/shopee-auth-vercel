@@ -13,6 +13,7 @@ import {
   Tag,
   Target,
   TrendingUp,
+  type LucideIcon,
 } from 'lucide-react'
 import styles from './strategies.module.css'
 
@@ -23,7 +24,7 @@ type Strategy = {
   title: string
   description: string
   available: boolean
-  icon: React.ComponentType<{ size?: number; strokeWidth?: number }>
+  icon: LucideIcon
 }
 
 const strategies: Strategy[] = [
