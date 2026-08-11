@@ -56,6 +56,7 @@ export default function ProductsPage() {
           <h1 className="adminTitle">Meus produtos</h1>
         </div>
         <div className="topActions">
+          <Link className="outlineButton" href="/ads">Shopee ADS</Link>
           <button className="outlineButton" onClick={load}>Atualizar lista</button>
           <Link className="primaryButton compact" href="/dashboard">Conta conectada</Link>
         </div>
