@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import {
   AlarmClock,
   Archive,
@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 import styles from './strategies.module.css'
 
-type StrategyKey = 'store-hours' | 'product-hours' | 'sale-goal' | 'discounts'
+type StrategyKey = 'store-hours' | 'product-hours' | 'discounts'
 
 type Strategy = {
   key: string
@@ -95,10 +95,6 @@ const activeCopy: Record<StrategyKey, { title: string; text: string }> = {
     title: 'Analisar horário campeão de um produto',
     text: 'Escolha um produto e um período. A análise será feita considerando vendas, lucro e desempenho de mídia do item selecionado.',
   },
-  'sale-goal': {
-    title: 'Definir meta por venda',
-    text: 'Informe meta mensal e lucro mínimo por venda para calcular o gasto máximo aceitável em ADS e o ROAS mínimo recomendado.',
-  },
   discounts: {
     title: 'Planejar descontos',
     text: 'Simule desconto em percentual ou valor fixo antes de aplicar mudanças em massa nos produtos.',
@@ -107,19 +103,8 @@ const activeCopy: Record<StrategyKey, { title: string; text: string }> = {
 
 export default function StrategiesPage() {
   const [active, setActive] = useState<StrategyKey | null>(null)
-  const [goal, setGoal] = useState('100')
-  const [profit, setProfit] = useState('10')
   const [discountType, setDiscountType] = useState('percent')
   const [discountValue, setDiscountValue] = useState('10')
-
-  const saleMath = useMemo(() => {
-    const monthlyGoal = Number(goal.replace(',', '.')) || 0
-    const profitPerSale = Number(profit.replace(',', '.')) || 0
-    return {
-      projectedProfit: monthlyGoal * profitPerSale,
-      maxAdSpend: monthlyGoal * Math.max(0, profitPerSale * 0.35),
-    }
-  }, [goal, profit])
 
   return (
     <main className={styles.page}>
@@ -151,9 +136,15 @@ export default function StrategiesPage() {
                 {strategy.available ? (
                   <>
                     <span className={styles.available}>✓ Disponível</span>
-                    <button className={styles.openButton} onClick={() => setActive(strategy.key as StrategyKey)}>
-                      Abrir estratégia <ChevronRight size={17} />
-                    </button>
+                    {strategy.key === 'sale-goal' ? (
+                      <Link className={styles.openButton} href="/strategies/meta-por-venda">
+                        Abrir estratégia <ChevronRight size={17} />
+                      </Link>
+                    ) : (
+                      <button className={styles.openButton} onClick={() => setActive(strategy.key as StrategyKey)}>
+                        Abrir estratégia <ChevronRight size={17} />
+                      </button>
+                    )}
                   </>
                 ) : (
                   <>
@@ -206,19 +197,6 @@ export default function StrategiesPage() {
               <div className={styles.actionBox}>
                 <ShieldCheck size={22} />
                 <div><strong>Análise segura</strong><span>Nenhuma alteração será feita na Shopee sem confirmação.</span></div>
-              </div>
-            </div>
-          )}
-
-          {active === 'sale-goal' && (
-            <div className={styles.goalLayout}>
-              <div className={styles.formGrid}>
-                <label><span>Meta de vendas no mês</span><input value={goal} onChange={e => setGoal(e.target.value)} inputMode="numeric" /></label>
-                <label><span>Lucro mínimo por venda (R$)</span><input value={profit} onChange={e => setProfit(e.target.value)} inputMode="decimal" /></label>
-              </div>
-              <div className={styles.resultGrid}>
-                <div><span>Lucro projetado</span><strong>R$ {saleMath.projectedProfit.toFixed(2).replace('.', ',')}</strong></div>
-                <div><span>Limite estimado para ADS</span><strong>R$ {saleMath.maxAdSpend.toFixed(2).replace('.', ',')}</strong></div>
               </div>
             </div>
           )}
