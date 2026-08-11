@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { cookies } from 'next/headers'
 import { jwtDecrypt } from 'jose'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 
 function key() {
   const secret = process.env.SESSION_SECRET
@@ -31,9 +32,12 @@ export default async function Dashboard() {
             <div className="row"><span className="label">Token válido até</span><span className="value">{expiresAt ? new Date(expiresAt).toLocaleString('pt-BR') : '—'}</span></div>
           </div>
 
-          <form method="post" action="/api/shopee/logout" style={{ marginTop: 22 }}>
-            <button className="btn secondary" type="submit">Desconectar</button>
-          </form>
+          <div style={{ marginTop: 22, display: 'grid', gap: 10 }}>
+            <Link href="/products" className="btn">Gerenciar meus produtos</Link>
+            <form method="post" action="/api/shopee/logout">
+              <button className="btn secondary" type="submit">Desconectar</button>
+            </form>
+          </div>
           <div className="footer">Tokens criptografados em sessão HTTP-only</div>
         </section>
       </main>
