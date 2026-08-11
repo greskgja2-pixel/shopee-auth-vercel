@@ -33,6 +33,7 @@ export default function StrategiesPage() {
         <Link href="/products">Produtos</Link>
         <Link href="/ads">Shopee ADS</Link>
         <Link href="/strategies" className={styles.activeNav}>Estratégias</Link>
+        <Link href="/calculator">Calculadora</Link>
       </nav>
 
       <section className={styles.grid}>
